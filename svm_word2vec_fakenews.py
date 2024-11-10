@@ -13,6 +13,7 @@ from gensim.models import Word2Vec
 import numpy as np
 import graphviz
 from sklearn.tree import export_graphviz
+from sklearn.svm import SVC
 
 # Download NLTK stopwords
 nltk.download('stopwords')
@@ -60,8 +61,6 @@ def text_to_vector(text):
 X_train_vect = np.array([text_to_vector(text) for text in X_train])
 X_test_vect = np.array([text_to_vector(text) for text in X_test])
 
-from sklearn.svm import SVC
-
 # Train the SVM model
 print("Training the SVM model with Word2Vec features...")
 svm_model = SVC(kernel='linear', random_state=42)
@@ -88,7 +87,7 @@ print("F1 Score:", f1)
 print("Generating confusion matrix for SVM...")
 conf_matrix = confusion_matrix(y_test, y_pred, labels=[1, 0])
 plt.figure(figsize=(6, 4))
-sns.heatmap(conf_matrix, annot=True, fmt="d", cmap="Blues", xticklabels=['Fake', 'Real'], yticklabels=['Real', 'Real'])
+sns.heatmap(conf_matrix, annot=True, fmt="d", cmap="Blues", xticklabels=['Fake', 'Real'], yticklabels=['Fake', 'Real'])
 plt.xlabel("Predicted Labels")
 plt.ylabel("True Labels")
 plt.title("Confusion Matrix (SVM)")
