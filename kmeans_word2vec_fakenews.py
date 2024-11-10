@@ -1,25 +1,21 @@
-# Install necessary libraries
-# !pip install pandas nltk scikit-learn matplotlib seaborn gensim graphviz
-
+# Import necessary libraries
 import pandas as pd
 import nltk
 from nltk.corpus import stopwords
 from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
 import matplotlib.pyplot as plt
 import seaborn as sns
 from gensim.models import Word2Vec
 import numpy as np
 import graphviz
-from sklearn.tree import export_graphviz
+from sklearn.cluster import KMeans
 
 # Download NLTK stopwords
 nltk.download('stopwords')
 stop_words = set(stopwords.words('english'))
 
 # Load data and drop rows with NaN values
-# data = pd.read_csv('/content/fake_news.csv', sep=',', on_bad_lines='skip', quoting=3, low_memory=False)
 data = pd.read_csv('WELFake_Dataset.csv')
 data.dropna(subset=['text', 'label'], inplace=True)
 print("Data loaded and cleaned. Remaining NaN values:")
@@ -60,17 +56,39 @@ def text_to_vector(text):
 X_train_vect = np.array([text_to_vector(text) for text in X_train])
 X_test_vect = np.array([text_to_vector(text) for text in X_test])
 
-# Train the Random Forest model
-print("Training the Random Forest model with Word2Vec features...")
-rf_model = RandomForestClassifier(n_estimators=100, random_state=42)
-rf_model.fit(X_train_vect, y_train)
+# Train the KMeans clustering model
+print("Training KMeans clustering model...")
+kmeans = KMeans(n_clusters=2, random_state=42)
+kmeans.fit(X_train_vect)
 print("Model training completed.")
 
-# Predict and calculate performance metrics
-print("Evaluating model performance...")
-y_pred = rf_model.predict(X_test_vect)
+# Predict cluster labels on the test set
+y_pred_clusters = kmeans.predict(X_test_vect)
 
-# Assuming 1 represents "fake" and 0 represents "real"
+from collections import Counter
+
+# Map cluster labels to true labels
+def map_clusters_to_labels(y_true, y_clusters):
+    labels = np.unique(y_clusters)
+    label_mapping = {}
+    for label in labels:
+        indices = np.where(y_clusters == label)
+        true_labels_in_cluster = y_true[indices]
+        if len(true_labels_in_cluster) == 0:
+            label_mapping[label] = 0  # Default label if cluster is empty
+        else:
+            most_common_label = Counter(true_labels_in_cluster).most_common(1)[0][0]
+            label_mapping[label] = most_common_label
+    return label_mapping
+
+# Map cluster labels to true labels
+label_mapping = map_clusters_to_labels(y_test.values, y_pred_clusters)
+print(f"Cluster to label mapping: {label_mapping}")
+
+# Apply the mapping to the predicted clusters
+y_pred = np.array([label_mapping[label] for label in y_pred_clusters])
+
+# Evaluate performance
 accuracy = accuracy_score(y_test, y_pred)
 precision = precision_score(y_test, y_pred, pos_label=1, average='binary')
 recall = recall_score(y_test, y_pred, pos_label=1, average='binary')
@@ -82,26 +100,13 @@ print("Precision:", precision)
 print("Recall:", recall)
 print("F1 Score:", f1)
 
-# Visualization 1: Confusion Matrix
+# Visualization: Confusion Matrix
 print("Generating confusion matrix...")
 conf_matrix = confusion_matrix(y_test, y_pred, labels=[1, 0])
 plt.figure(figsize=(6, 4))
-sns.heatmap(conf_matrix, annot=True, fmt="d", cmap="Blues", xticklabels=['Real', 'Fake'], yticklabels=['Real', 'Fake'])
+sns.heatmap(conf_matrix, annot=True, fmt="d", cmap="Blues",
+            xticklabels=['Fake', 'Real'], yticklabels=['Fake', 'Real'])
 plt.xlabel("Predicted Labels")
 plt.ylabel("True Labels")
 plt.title("Confusion Matrix")
 plt.show()
-
-# Visualization 2: Visualizing a Decision Tree
-tree = rf_model.estimators_[0]
-
-   # Export the tree as a DOT file
-dot_data = export_graphviz(tree, 
-                            out_file=None, 
-                          
-                            filled=True, 
-                            rounded=True)
-
-# Visualize the tree using graphviz
-graph = graphviz.Source(dot_data)
-graph.render("tree")  # Saves the tree as a PDF file

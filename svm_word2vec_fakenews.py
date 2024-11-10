@@ -60,15 +60,17 @@ def text_to_vector(text):
 X_train_vect = np.array([text_to_vector(text) for text in X_train])
 X_test_vect = np.array([text_to_vector(text) for text in X_test])
 
-# Train the Random Forest model
-print("Training the Random Forest model with Word2Vec features...")
-rf_model = RandomForestClassifier(n_estimators=100, random_state=42)
-rf_model.fit(X_train_vect, y_train)
+from sklearn.svm import SVC
+
+# Train the SVM model
+print("Training the SVM model with Word2Vec features...")
+svm_model = SVC(kernel='linear', random_state=42)
+svm_model.fit(X_train_vect, y_train)
 print("Model training completed.")
 
 # Predict and calculate performance metrics
-print("Evaluating model performance...")
-y_pred = rf_model.predict(X_test_vect)
+print("Evaluating model performance with SVM...")
+y_pred = svm_model.predict(X_test_vect)
 
 # Assuming 1 represents "fake" and 0 represents "real"
 accuracy = accuracy_score(y_test, y_pred)
@@ -76,32 +78,18 @@ precision = precision_score(y_test, y_pred, pos_label=1, average='binary')
 recall = recall_score(y_test, y_pred, pos_label=1, average='binary')
 f1 = f1_score(y_test, y_pred, pos_label=1.0, average='binary')
 
-print("Model performance:")
+print("SVM Model performance:")
 print("Accuracy:", accuracy)
 print("Precision:", precision)
 print("Recall:", recall)
 print("F1 Score:", f1)
 
-# Visualization 1: Confusion Matrix
-print("Generating confusion matrix...")
+# Visualization: Confusion Matrix
+print("Generating confusion matrix for SVM...")
 conf_matrix = confusion_matrix(y_test, y_pred, labels=[1, 0])
 plt.figure(figsize=(6, 4))
-sns.heatmap(conf_matrix, annot=True, fmt="d", cmap="Blues", xticklabels=['Real', 'Fake'], yticklabels=['Real', 'Fake'])
+sns.heatmap(conf_matrix, annot=True, fmt="d", cmap="Blues", xticklabels=['Fake', 'Real'], yticklabels=['Real', 'Real'])
 plt.xlabel("Predicted Labels")
 plt.ylabel("True Labels")
-plt.title("Confusion Matrix")
+plt.title("Confusion Matrix (SVM)")
 plt.show()
-
-# Visualization 2: Visualizing a Decision Tree
-tree = rf_model.estimators_[0]
-
-   # Export the tree as a DOT file
-dot_data = export_graphviz(tree, 
-                            out_file=None, 
-                          
-                            filled=True, 
-                            rounded=True)
-
-# Visualize the tree using graphviz
-graph = graphviz.Source(dot_data)
-graph.render("tree")  # Saves the tree as a PDF file
