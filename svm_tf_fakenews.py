@@ -80,3 +80,28 @@ plt.xlabel("Predicted Labels")
 plt.ylabel("True Labels")
 plt.title("Confusion Matrix")
 plt.show()
+
+
+# Feature Importance Visualization
+
+# Get feature names and coefficients
+feature_names = vectorizer.get_feature_names_out()
+coefficients = linear_svc_model.coef_[0]  # Corrected line
+
+# Create a DataFrame of features and coefficients
+coef_df = pd.DataFrame({
+    'Feature': feature_names,
+    'Coefficient': coefficients
+})
+
+# Sort by absolute value of coefficients
+coef_df['Abs_Coefficient'] = coef_df['Coefficient'].abs()
+coef_df.sort_values(by='Abs_Coefficient', ascending=False, inplace=True)
+
+# Plot the top positive and negative coefficients
+plt.figure(figsize=(12, 10))
+sns.barplot(x='Coefficient', y='Feature', data=coef_df.head(50))
+plt.title('Top Features Contributing to Fake News Detection')
+plt.xlabel('Coefficient Value')
+plt.ylabel('Feature')
+plt.show()
